@@ -3,6 +3,7 @@ services:
   mattermost:
     image: mattermost/mattermost-team-edition:6.5.0
     restart: unless-stopped
+    user: root
     ports:
     - 8000:8000
     - 8065:8065
@@ -12,10 +13,10 @@ services:
     environment:
       MM_SQLSETTINGS_DATASOURCE: postgres://mattermost:secret@postgres:5432/mattermost?sslmode=disable&connect_timeout=10
       MM_SERVICESETTINGS_SiteURL: http://127.0.0.1:8065
-      MM_EMAILSETTINGS_SENDEMAILNOTIFICATIONS: false
+      MM_EMAILSETTINGS_SENDEMAILNOTIFICATIONS: "false"
       MM_EMAILSETTINGS_FEEDBACKEMAIL: admin@example.com
       MM_EMAILSETTINGS_REPLYTOADDRESS: admin@example.com
-      MM_EMAILSETTINGS_ENABLESMTPAUTH: true
+      MM_EMAILSETTINGS_ENABLESMTPAUTH: "true"
       MM_EMAILSETTINGS_SMTPUSERNAME: admin
       MM_EMAILSETTINGS_SMTPPASSWORD: password
       MM_EMAILSETTINGS_SMTPSERVER: postfix
@@ -27,8 +28,8 @@ services:
         condition: service_started
     volumes:
       - ./config:/mattermost/config:rw
-      - ./volumes/mattermost/data/:/mattermost/data:rw
-      - ./volumes/mattermost/logs/:/mattermost/logs:rw
+      - ./volumes/data/:/mattermost/data:rw
+      - ./volumes/logs/:/mattermost/logs:rw
 
   postgres:
     image: postgres:14-alpine
