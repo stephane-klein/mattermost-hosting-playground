@@ -1,0 +1,56 @@
+version: '3.8'
+services:
+  mattermost:
+    image: mattermost/mattermost-team-edition:6.5.0
+    restart: unless-stopped
+    ports:
+    - 8000:8000
+    - 8065:8065
+    - 8067:8067
+    - 8074:8074
+    - 8075:8075
+    environment:
+      MM_SQLSETTINGS_DATASOURCE: postgres://mattermost:secret@postgres:5432/mattermost?sslmode=disable&connect_timeout=10
+      MM_SERVICESETTINGS_SiteURL: http://127.0.0.1:8065
+      MM_EMAILSETTINGS_SENDEMAILNOTIFICATIONS: false
+      MM_EMAILSETTINGS_FEEDBACKEMAIL: admin@example.com
+      MM_EMAILSETTINGS_REPLYTOADDRESS: admin@example.com
+      MM_EMAILSETTINGS_ENABLESMTPAUTH: true
+      MM_EMAILSETTINGS_SMTPUSERNAME: admin
+      MM_EMAILSETTINGS_SMTPPASSWORD: password
+      MM_EMAILSETTINGS_SMTPSERVER: postfix
+      MM_EMAILSETTINGS_SMTPPORT: 25
+    depends_on:
+      postgres:
+        condition: service_healthy
+      postfix:
+        condition: service_started
+    volumes:
+      - ./config:/mattermost/config:rw
+      - ./volumes/mattermost/data/:/mattermost/data:rw
+      - ./volumes/mattermost/logs/:/mattermost/logs:rw
+
+  postgres:
+    image: postgres:14-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: mattermost
+      POSTGRES_USER: mattermost
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - ./volumes/postgres/:/var/lib/postgresql/
+    healthcheck:
+      test: ["CMD", "sh", "-c", "pg_isready -U $$POSTGRES_USER -h $$(hostname -i)"]
+      interval: 10s
+      start_period: 30s
+
+  postfix:
+    container_name: mattermost-postfix
+    image: marvambass/versatile-postfix:latest
+    restart: unless-stopped
+    volumes:
+      - ./dkim:/etc/postfix/dkim/
+      - ./maildirs:/var/mail
+    environment:
+      - DKIM_SELECTOR=chat
+    command: example.com admin:password
